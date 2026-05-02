@@ -32,8 +32,14 @@ async def get_repo_auth(repo_id: UUID, service_type: str, cred_repo: Credentials
     if cred.auth_type == AuthType.HTTP_TOKEN:
         return secret, None, cred.username
     elif cred.auth_type == AuthType.SSH_KEY:
+        # Normalize key: strip whitespace, fix line endings, ensure trailing newline
+        normalized_secret = secret.strip().replace("\r\n", "\n") + "\n"
+        
+        if not normalized_secret.startswith("-----"):
+            logger.error(f"SSH Key for {service_type} does not appear to be a valid private key (should start with '-----')")
+            
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
-            f.write(secret)
+            f.write(normalized_secret)
             ssh_key_path = f.name
         os.chmod(ssh_key_path, 0o600)
         return None, ssh_key_path, None
