@@ -25,7 +25,13 @@ def encrypt_secret(secret: str) -> str:
     return fernet.encrypt(secret.encode()).decode()
 
 def decrypt_secret(encrypted_secret: str) -> str:
-    return fernet.decrypt(encrypted_secret.encode()).decode()
+    try:
+        return fernet.decrypt(encrypted_secret.encode()).decode()
+    except Exception as e:
+        raise ValueError(
+            "Failed to decrypt secret. This usually means your ENCRYPTION_KEY has changed "
+            "since this secret was saved. Please re-save the repository credentials in the dashboard."
+        ) from e
 
 def mask_secrets(text: str, secrets: list[str]) -> str:
     if not secrets:
