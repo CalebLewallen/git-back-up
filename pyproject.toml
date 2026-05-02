@@ -1,0 +1,13 @@
+[project]
+name = "git-back-up"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "advanced-alchemy>=1.9.3",
+    "asyncpg>=0.31.0",
+    "litestar>=2.21.1",
+    "psycopg[binary]>=3.3.3",
+    "sqlalchemy>=2.0.49",
+]
