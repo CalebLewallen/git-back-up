@@ -3,6 +3,7 @@ import tempfile
 import os
 import logging
 import traceback
+import asyncio
 from uuid import UUID
 from datetime import datetime, timezone
 from typing import Optional, List, Tuple
@@ -140,7 +141,9 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
 
             # 3. Mirror
             logger.info(f"Running git mirror command (source: {repo.source_remote_repo}, target: {repo.target_remote_repo})...")
-            result = git_service.mirror_repo(
+            # Offload blocking Git operations to a separate thread to prevent blocking the event loop
+            result = await asyncio.to_thread(
+                git_service.mirror_repo,
                 source_url=source_url,
                 target_url=target_url,
                 repo_id=str(repo_id),
