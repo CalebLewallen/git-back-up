@@ -35,11 +35,11 @@
         <div class="space-y-md">
             <div class="space-y-sm">
                 <label class="text-label-caps text-on-surface-variant block">SOURCE REMOTE URL</label>
-                <input name="source_remote_repo" class="w-full bg-surface-container text-on-surface border border-outline-variant p-md font-code-sm" placeholder="https://github.com/user/repo.git" type="url" value="{{ repo.source_remote_repo if repo else '' }}" required/>
+                <input name="source_remote_repo" class="w-full bg-surface-container text-on-surface border border-outline-variant p-md font-code-sm" placeholder="https://github.com/user/repo.git or git@github.com:user/repo.git" type="text" value="{{ repo.source_remote_repo if repo else '' }}" required/>
             </div>
             <div class="space-y-sm">
                 <label class="text-label-caps text-on-surface-variant block">TARGET REMOTE URL</label>
-                <input name="target_remote_repo" class="w-full bg-surface-container text-on-surface border border-outline-variant p-md font-code-sm" placeholder="https://gitlab.com/user/backup-repo.git" type="url" value="{{ repo.target_remote_repo if repo else '' }}" required/>
+                <input name="target_remote_repo" class="w-full bg-surface-container text-on-surface border border-outline-variant p-md font-code-sm" placeholder="https://gitlab.com/user/backup.git or git@gitlab.com:user/backup.git" type="text" value="{{ repo.target_remote_repo if repo else '' }}" required/>
             </div>
         </div>
     </section>
