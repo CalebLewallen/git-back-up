@@ -68,7 +68,21 @@ The application automatically creates the necessary database tables on the first
 
 ## Running the Project
 
-### 1. Start the Application
+### Using Docker Compose (Recommended)
+
+The easiest way to run the entire stack (Web, Worker, and Database) is using Docker Compose:
+
+1. **Configure Environment Variables**:
+   Ensure you have a `.env` file with `ENCRYPTION_KEY` set (see Setup Instructions above).
+
+2. **Start the Containers**:
+   ```bash
+   docker compose up -d
+   ```
+
+The application will be available at `http://localhost:8000`.
+
+### Manual Execution (with uv)
 
 ```bash
 uv run uvicorn main:app

@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: git-back-up-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-gitbackup}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gitbackup}
+      POSTGRES_DB: ${DB_NAME:-gitbackup}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-gitbackup} -d ${DB_NAME:-gitbackup}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: git-back-up-web
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_TYPE=postgres
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-gitbackup}:${DB_PASSWORD:-gitbackup}@db:5432/${DB_NAME:-gitbackup}
+      - PG_CONNECTION_STRING=postgresql://${DB_USER:-gitbackup}:${DB_PASSWORD:-gitbackup}@db:5432/${DB_NAME:-gitbackup}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-change-me-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./temp_git:/tmp/git-back-up
+
+volumes:
+  postgres_data:
