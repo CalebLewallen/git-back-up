@@ -1,6 +1,8 @@
 import procrastinate
 import tempfile
 import os
+import logging
+import traceback
 from uuid import UUID
 from datetime import datetime, timezone
 from typing import Optional, List, Tuple
@@ -15,6 +17,8 @@ from core.security import decrypt_secret, mask_secrets
 
 # Initialize procrastinate app
 app = procrastinate.App(connector=procrastinate.PsycopgConnector(conninfo=settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")))
+
+logger = logging.getLogger(__name__)
 
 async def get_repo_auth(repo_id: UUID, service_type: str, cred_repo: CredentialsRepository) -> Tuple[Optional[str], Optional[str]]:
     creds = await cred_repo.list(git_repo_id=repo_id, service_type=service_type)
@@ -73,6 +77,8 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
     repo_id = UUID(repo_id_str)
     job_id = UUID(job_id_str)
     
+    logger.info(f"Starting sync job {job_id} for repo {repo_id}")
+    
     engine = create_async_engine(settings.DATABASE_URL)
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     
@@ -88,12 +94,15 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
         repo = await repo_repo.get(repo_id)
         job = await job_repo.get(job_id)
         
+        logger.info(f"Syncing repo: {repo.repo_name}")
+        
         job.status = JobStatus.IN_PROGRESS
         job.started_at = datetime.now()
         await session.commit()
         
         try:
             # 1. Auth Setup
+            logger.info("Setting up authentication...")
             source_token, source_ssh = await get_repo_auth(repo_id, "SOURCE", cred_repo)
             target_token, target_ssh = await get_repo_auth(repo_id, "TARGET", cred_repo)
             
@@ -119,6 +128,7 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
             # 2. Branches
             branches = None
             if repo.mirror_mode == MirrorMode.SELECT_BRANCHES:
+                logger.info("Fetching selective branches...")
                 branch_objs = await branch_repo.list(git_repo_id=repo_id)
                 branches = [b.branch_name for b in branch_objs]
                 # Validate branches
@@ -127,6 +137,7 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
                         raise ValueError(f"Invalid branch name: {b}")
 
             # 3. Mirror
+            logger.info(f"Running git mirror command (source: {repo.source_remote_repo}, target: {repo.target_remote_repo})...")
             result = git_service.mirror_repo(
                 source_url=source_url,
                 target_url=target_url,
@@ -137,16 +148,32 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
                 target_ssh_key=target_ssh
             )
             
-            job.stdout_log = mask_secrets(result.stdout, secrets_to_mask)
-            job.stderr_log = mask_secrets(result.stderr, secrets_to_mask)
+            logger.info(f"Git mirror finished with return code {result.returncode}")
+            
+            job.stdout_log = mask_secrets(result.stdout or "", secrets_to_mask)
+            
+            stderr = result.stderr or ""
+            if result.returncode != 0 and not stderr:
+                stderr = f"Sync failed with return code {result.returncode}. No error output captured."
+            
+            job.stderr_log = mask_secrets(stderr, secrets_to_mask)
             job.status = JobStatus.SUCCESS if result.returncode == 0 else JobStatus.FAILED
             
+            if result.returncode != 0:
+                logger.error(f"Sync failed: {stderr}")
+            
         except Exception as e:
+            logger.error(f"Error during sync job: {e}")
+            logger.error(traceback.format_exc())
             job.status = JobStatus.FAILED
-            job.stderr_log = mask_secrets(str(e), secrets_to_mask)
+            job.stderr_log = mask_secrets(f"Internal Error:\n{str(e)}\n\n{traceback.format_exc()}", secrets_to_mask)
         
         job.completed_at = datetime.now()
-        await session.commit()
+        try:
+            await session.commit()
+            logger.info(f"Job {job_id} completed and status saved.")
+        except Exception as commit_exc:
+            logger.error(f"Failed to commit job status to database: {commit_exc}")
         
         # Cleanup SSH keys
         for key in ssh_keys:
