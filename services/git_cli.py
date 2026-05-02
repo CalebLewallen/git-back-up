@@ -93,7 +93,8 @@ class GitService:
             if not key_path:
                 return {}
             # Use -p flag for custom port support
-            return {"GIT_SSH_COMMAND": f"ssh -i {key_path} -p {port} -o StrictHostKeyChecking=no"}
+            # Use UserKnownHostsFile=/dev/null to completely bypass host key conflicts in background jobs
+            return {"GIT_SSH_COMMAND": f"ssh -i {key_path} -p {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"}
 
         # 1. Clone/Fetch from Source
         source_env = get_ssh_env(source_ssh_key, source_ssh_port)
