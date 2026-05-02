@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from litestar import Litestar, Request, Response
 from litestar.static_files import StaticFilesConfig
 from litestar.middleware import DefineMiddleware
@@ -18,7 +19,14 @@ from database.tables import UUIDAuditBase
 from litestar.template.config import TemplateConfig
 from litestar.contrib.jinja import JinjaTemplateEngine
 
+logger = logging.getLogger(__name__)
+
+# Keep a reference to the worker task to prevent garbage collection
+# https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+_worker_task: asyncio.Task | None = None
+
 async def on_startup() -> None:
+    global _worker_task
     async with engine.begin() as conn:
         await conn.run_sync(UUIDAuditBase.metadata.create_all)
     await procrastinate_app.open_async()
@@ -28,8 +36,10 @@ async def on_startup() -> None:
     except Exception:
         # Schema likely already exists
         pass
-    # Start the worker in the background
-    asyncio.create_task(procrastinate_app.run_worker_async())
+    # Start the worker in the background and keep a reference
+    logger.info("Starting embedded procrastinate worker...")
+    _worker_task = asyncio.create_task(procrastinate_app.run_worker_async())
+    _worker_task.add_done_callback(lambda t: logger.info(f"Worker task finished with status: {t.exception() or 'Success'}"))
 
 async def on_shutdown() -> None:
     await procrastinate_app.close_async()

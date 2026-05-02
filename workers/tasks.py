@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Optional, List, Tuple
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import select
+from database.engine import engine, session_factory
 from database.repositories.git_repo_repo import GitRepoRepository, SyncJobRepository, CredentialsRepository, WebhookRepository, GitRepoBranchRepository
 from database.tables.git_repo_tables import JobStatus, Webhook, AuthType, MirrorMode, ServiceType
 from services.git_cli import git_service
@@ -46,10 +47,8 @@ def validate_git_url(url: str):
 @app.task
 async def send_notifications_task(job_id_str: str):
     job_id = UUID(job_id_str)
-    engine = create_async_engine(settings.DATABASE_URL)
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
     
-    async with async_session() as session:
+    async with session_factory() as session:
         job_repo = SyncJobRepository(session=session)
         repo_repo = GitRepoRepository(session=session)
         webhook_repo = WebhookRepository(session=session)
@@ -70,8 +69,6 @@ async def send_notifications_task(job_id_str: str):
         for webhook in webhooks:
             await notification_service.send_webhook(webhook, payload)
             
-    await engine.dispose()
-
 @app.task
 async def sync_repo_task(repo_id_str: str, job_id_str: str):
     repo_id = UUID(repo_id_str)
@@ -79,13 +76,10 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
     
     logger.info(f"Starting sync job {job_id} for repo {repo_id}")
     
-    engine = create_async_engine(settings.DATABASE_URL)
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
-    
     ssh_keys = []
     secrets_to_mask = []
     
-    async with async_session() as session:
+    async with session_factory() as session:
         repo_repo = GitRepoRepository(session=session)
         job_repo = SyncJobRepository(session=session)
         cred_repo = CredentialsRepository(session=session)
@@ -184,5 +178,3 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
                     pass
         
         await send_notifications_task.defer_async(job_id_str=str(job_id))
-    
-    await engine.dispose()
