@@ -23,7 +23,7 @@
             <p class="text-on-surface-variant font-body-md">Mirroring from {{ repo.source_remote_repo|truncate(50) }} to {{ repo.target_remote_repo|truncate(50) }}.</p>
         </div>
         <div class="flex flex-wrap gap-sm">
-            <form action="/api/repos/{{ repo.id }}/sync" method="POST">
+            <form action="/api/repos/{{ repo.id }}/sync" method="POST" class="sync-form">
                 <button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-heading-sm text-sm hover:opacity-90 transition-all">
                     <span class="material-symbols-outlined text-lg">sync</span>
                     Trigger Manual Sync
@@ -140,4 +140,45 @@
     </section>
     {% endif %}
 </div>
+
+<script>
+    document.querySelectorAll('.sync-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = form.querySelector('button');
+            const icon = button.querySelector('.material-symbols-outlined');
+            const originalText = button.innerText;
+            
+            // Visual feedback: spin the icon
+            icon.classList.add('animate-spin');
+            button.disabled = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                });
+
+                if (response.ok) {
+                    // Success feedback
+                    icon.classList.remove('animate-spin');
+                    const originalIcon = icon.textContent;
+                    icon.textContent = 'done';
+                    setTimeout(() => {
+                        icon.textContent = originalIcon;
+                        button.disabled = false;
+                    }, 2000);
+                } else {
+                    const err = await response.json();
+                    alert('Error triggering sync: ' + (err.detail || JSON.stringify(err)));
+                    icon.classList.remove('animate-spin');
+                    button.disabled = false;
+                }
+            } catch (error) {
+                alert('Failed to trigger sync: ' + error);
+                icon.classList.remove('animate-spin');
+                button.disabled = false;
+            }
+        });
+    });
+</script>
 {% endblock %}

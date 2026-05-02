@@ -100,7 +100,7 @@
                     </td>
                     <td class="px-lg py-md text-right">
                         <div class="flex items-center justify-end gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                            <form action="/api/repos/{{ repo.id }}/sync" method="POST">
+                            <form action="/api/repos/{{ repo.id }}/sync" method="POST" class="sync-form">
                                 <button class="p-xs hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors" title="Sync Now">
                                     <span class="material-symbols-outlined text-sm">sync</span>
                                 </button>
@@ -116,4 +116,43 @@
         </table>
     </div>
 </div>
+
+<script>
+    document.querySelectorAll('.sync-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = form.querySelector('button');
+            const icon = button.querySelector('.material-symbols-outlined');
+            
+            // Visual feedback: spin the icon
+            icon.classList.add('animate-spin');
+            button.disabled = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                });
+
+                if (response.ok) {
+                    // Success feedback
+                    icon.classList.remove('animate-spin');
+                    icon.textContent = 'done';
+                    setTimeout(() => {
+                        icon.textContent = 'sync';
+                        button.disabled = false;
+                    }, 2000);
+                } else {
+                    const err = await response.json();
+                    alert('Error triggering sync: ' + (err.detail || JSON.stringify(err)));
+                    icon.classList.remove('animate-spin');
+                    button.disabled = false;
+                }
+            } catch (error) {
+                alert('Failed to trigger sync: ' + error);
+                icon.classList.remove('animate-spin');
+                button.disabled = false;
+            }
+        });
+    });
+</script>
 {% endblock %}
