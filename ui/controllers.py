@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
+from uuid import UUID, uuid4
 from litestar import Controller, Request, Response
 from litestar.handlers import get, post
 from litestar.response import Template
@@ -7,8 +7,12 @@ from litestar.params import Body
 from litestar.enums import RequestEncodingType
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from database.tables.git_repo_tables import GitRepo, SyncJob, JobStatus
-from database.repositories.git_repo_repo import GitRepoRepository
+from sqlalchemy.orm import selectinload
+
+from database.tables import GitRepo, SyncJob, JobStatus, User, Session, GitRepoBranch, Credentials
+from database.repositories.git_repo_repo import GitRepoRepository, SyncJobRepository, WebhookRepository
+from database.repositories.user_repo import UserRepository, SessionRepository
+from core.security import verify_password, hash_password
 
 class UIController(Controller):
     path = "/"
@@ -24,10 +28,6 @@ class UIController(Controller):
         db_session: AsyncSession,
         data: dict = Body(media_type=RequestEncodingType.URL_ENCODED)
     ) -> Response:
-        from database.repositories.user_repo import UserRepository
-        from core.security import verify_password, hash_password
-        from uuid import uuid4
-
         user_repo = UserRepository(session=db_session)
         user = request.user
         
@@ -125,15 +125,16 @@ class UIController(Controller):
 
     @get("/repositories/{repo_id:uuid}/edit")
     async def repo_edit_page(self, db_session: AsyncSession, repo_id: UUID) -> Template:
-        from sqlalchemy.orm import selectinload
-        # Ensure we use the model from database.tables
-        from database.tables import GitRepo
-        stmt = select(GitRepo).options(
-            selectinload(GitRepo.credentials),
-            selectinload(GitRepo.branches)
-        ).where(GitRepo.id == repo_id)
+        stmt = (
+            select(GitRepo)
+            .options(
+                selectinload(GitRepo.credentials),
+                selectinload(GitRepo.branches)
+            )
+            .where(GitRepo.id == repo_id)
+        )
         result = await db_session.execute(stmt)
-        repo = result.scalar_one()
+        repo = result.scalars().unique().one()
         return Template(
             template_name="pages/repo_edit.html",
             context={"repo": repo, "active_page": "repos"}
@@ -141,8 +142,6 @@ class UIController(Controller):
 
     @get("/jobs")
     async def job_list_page(self, db_session: AsyncSession) -> Template:
-        # Re-use repo_list logic or dedicated job list if needed
-        # For simplicity, we'll create a quick job list
         stmt = select(SyncJob, GitRepo.repo_name).join(GitRepo).order_by(SyncJob.started_at.desc()).limit(50)
         result = await db_session.execute(stmt)
         jobs = []
@@ -175,7 +174,6 @@ class UIController(Controller):
 
     @get("/webhooks")
     async def webhook_page(self, db_session: AsyncSession) -> Template:
-        from database.repositories.git_repo_repo import WebhookRepository
         repo = WebhookRepository(session=db_session)
         webhooks = await repo.list()
         return Template(
