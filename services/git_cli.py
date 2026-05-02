@@ -71,6 +71,7 @@ class GitService:
         force_push: bool = False,
         source_ssh_key: Optional[str] = None,
         target_ssh_key: Optional[str] = None,
+        ssh_port: int = 22,
         timeout_seconds: int = 1800
     ) -> GitResult:
         # Check disk space (require at least 500MB free)
@@ -90,7 +91,8 @@ class GitService:
         def get_ssh_env(key_path: Optional[str]):
             if not key_path:
                 return {}
-            return {"GIT_SSH_COMMAND": f"ssh -i {key_path} -o StrictHostKeyChecking=no"}
+            # Use -p flag for custom port support
+            return {"GIT_SSH_COMMAND": f"ssh -i {key_path} -p {ssh_port} -o StrictHostKeyChecking=no"}
 
         # 1. Clone/Fetch from Source
         source_env = get_ssh_env(source_ssh_key)
