@@ -115,4 +115,59 @@
         </button>
     </div>
 </form>
+
+<script>
+    document.querySelector('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        
+        const data = {
+            repo_name: formData.get('repo_name'),
+            replication_interval_hours: parseInt(formData.get('replication_interval_hours')),
+            source_remote_repo: formData.get('source_remote_repo'),
+            target_remote_repo: formData.get('target_remote_repo'),
+            mirror_mode: formData.get('mirror_mode'),
+            push_mode: formData.get('push_mode'),
+            credentials: [],
+            branches: []
+        };
+
+        // Parse credentials
+        for (let i = 0; i < 2; i++) {
+            const serviceType = formData.get(`credentials[${i}][service_type]`);
+            const authType = formData.get(`credentials[${i}][auth_type]`);
+            const secret = formData.get(`credentials[${i}][secret]`);
+            const username = formData.get(`credentials[${i}][username]`);
+            
+            if (secret && secret.trim()) {
+                data.credentials.push({
+                    service_type: serviceType,
+                    auth_type: authType,
+                    secret: secret,
+                    username: username || null
+                });
+            }
+        }
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                window.location.href = '/repositories';
+            } else {
+                const err = await response.json();
+                alert('Error saving repository: ' + (err.detail || JSON.stringify(err.extra || err)));
+            }
+        } catch (error) {
+            alert('Failed to save repository: ' + error);
+        }
+    });
+</script>
 {% endblock %}
