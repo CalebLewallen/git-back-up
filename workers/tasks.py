@@ -21,23 +21,23 @@ app = procrastinate.App(connector=procrastinate.PsycopgConnector(conninfo=settin
 
 logger = logging.getLogger(__name__)
 
-async def get_repo_auth(repo_id: UUID, service_type: str, cred_repo: CredentialsRepository) -> Tuple[Optional[str], Optional[str]]:
+async def get_repo_auth(repo_id: UUID, service_type: str, cred_repo: CredentialsRepository) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     creds = await cred_repo.list(git_repo_id=repo_id, service_type=service_type)
     if not creds:
-        return None, None
+        return None, None, None
     
     cred = creds[0]
     secret = decrypt_secret(cred.encrypted_secret)
     
     if cred.auth_type == AuthType.HTTP_TOKEN:
-        return secret, None
+        return secret, None, cred.username
     elif cred.auth_type == AuthType.SSH_KEY:
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write(secret)
             ssh_key_path = f.name
         os.chmod(ssh_key_path, 0o600)
-        return None, ssh_key_path
-    return None, None
+        return None, ssh_key_path, None
+    return None, None, None
 
 def validate_git_url(url: str):
     # Prevent argument injection by ensuring URL doesn't start with -
@@ -97,8 +97,8 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
         try:
             # 1. Auth Setup
             logger.info("Setting up authentication...")
-            source_token, source_ssh = await get_repo_auth(repo_id, "SOURCE", cred_repo)
-            target_token, target_ssh = await get_repo_auth(repo_id, "TARGET", cred_repo)
+            source_token, source_ssh, source_user = await get_repo_auth(repo_id, "SOURCE", cred_repo)
+            target_token, target_ssh, target_user = await get_repo_auth(repo_id, "TARGET", cred_repo)
             
             if source_ssh: ssh_keys.append(source_ssh)
             if target_ssh: ssh_keys.append(target_ssh)
@@ -110,14 +110,16 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
             if source_token:
                 if "://" in source_url:
                     proto, rest = source_url.split("://", 1)
-                    source_url = f"{proto}://{source_token}@{rest}"
+                    auth_part = f"{source_user}:{source_token}" if source_user else source_token
+                    source_url = f"{proto}://{auth_part}@{rest}"
 
             target_url = repo.target_remote_repo
             validate_git_url(target_url)
             if target_token:
                 if "://" in target_url:
                     proto, rest = target_url.split("://", 1)
-                    target_url = f"{proto}://{target_token}@{rest}"
+                    auth_part = f"{target_user}:{target_token}" if target_user else target_token
+                    target_url = f"{proto}://{auth_part}@{rest}"
 
             # 2. Branches
             branches = None
