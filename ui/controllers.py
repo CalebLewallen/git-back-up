@@ -125,8 +125,13 @@ class UIController(Controller):
 
     @get("/repositories/{repo_id:uuid}/edit")
     async def repo_edit_page(self, db_session: AsyncSession, repo_id: UUID) -> Template:
-        repo_repo = GitRepoRepository(session=db_session)
-        repo = await repo_repo.get(repo_id)
+        from sqlalchemy.orm import selectinload
+        stmt = select(GitRepo).options(
+            selectinload(GitRepo.credentials),
+            selectinload(GitRepo.branches)
+        ).where(GitRepo.id == repo_id)
+        result = await db_session.execute(stmt)
+        repo = result.scalar_one()
         return Template(
             template_name="pages/repo_edit.html",
             context={"repo": repo, "active_page": "repos"}

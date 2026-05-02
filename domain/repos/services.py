@@ -30,6 +30,53 @@ class RepoService:
         await self.session.commit()
         return repo
 
+    async def update_repo(self, repo_id: UUID, data: dict) -> GitRepo:
+        creds_data = data.pop("credentials", [])
+        branches_data = data.pop("branches", [])
+        
+        repo = await self.repo_repo.get(repo_id)
+        for key, value in data.items():
+            setattr(repo, key, value)
+        
+        repo = await self.repo_repo.update(repo)
+        
+        # Refresh credentials (delete and recreate)
+        existing_creds = await self.cred_repo.list(git_repo_id=repo_id)
+        existing_creds_map = {c.service_type: c for c in existing_creds}
+        
+        for cred in existing_creds:
+            await self.cred_repo.delete(cred.id)
+            
+        for cred_data in creds_data:
+            service_type = cred_data["service_type"]
+            secret = cred_data.pop("secret", None)
+            
+            if not secret or not secret.strip():
+                # Try to use old secret
+                old_cred = existing_creds_map.get(service_type)
+                if old_cred:
+                    cred_data["encrypted_secret"] = old_cred.encrypted_secret
+                else:
+                    # No old secret and no new secret provided, skip or handle error?
+                    # For now, if it was already in the form, it might be expected to have one.
+                    continue
+            else:
+                cred_data["encrypted_secret"] = encrypt_secret(secret)
+                
+            cred_data["git_repo_id"] = repo.id
+            await self.cred_repo.add(Credentials(**cred_data))
+            
+        # Refresh branches
+        existing_branches = await self.branch_repo.list(git_repo_id=repo_id)
+        for branch in existing_branches:
+            await self.branch_repo.delete(branch.id)
+            
+        for branch_name in branches_data:
+            await self.branch_repo.add(GitRepoBranch(git_repo_id=repo.id, branch_name=branch_name))
+            
+        await self.session.commit()
+        return repo
+
     async def trigger_sync(self, repo_id: UUID) -> SyncJob:
         job = await self.job_repo.add(SyncJob(git_repo_id=repo_id, job_type=JobType.MANUAL))
         await self.session.commit()

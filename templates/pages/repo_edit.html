@@ -4,7 +4,7 @@
 {% block header_title %}{% if repo %}Edit{% else %}New{% endif %} Repository{% endblock %}
 
 {% block content %}
-<form class="space-y-8 max-w-5xl" action="/api/repos" method="POST">
+<form class="space-y-8 max-w-5xl" action="{% if repo %}/api/repos/{{ repo.id }}{% else %}/api/repos{% endif %}" method="POST">
     <!-- Section 1: Basic Info -->
     <section class="bg-surface-container-low border border-outline-variant p-lg shadow-sm">
         <div class="flex items-center gap-3 mb-6">
@@ -79,6 +79,14 @@
     <!-- Section 4: Credentials -->
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-gutter">
         {% for type in ['SOURCE', 'TARGET'] %}
+        {% set existing_cred = None %}
+        {% if repo %}
+            {% for c in repo.credentials %}
+                {% if c.service_type == type %}
+                    {% set existing_cred = c %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
         <div class="bg-surface-container-low border border-outline-variant p-lg shadow-sm">
             <div class="flex items-center gap-3 mb-6">
                 <span class="material-symbols-outlined text-primary">lock</span>
@@ -89,17 +97,17 @@
                 <div class="space-y-sm">
                     <label class="text-label-caps text-on-surface-variant block">AUTH TYPE</label>
                     <select name="credentials[{{ loop.index0 }}][auth_type]" class="w-full bg-surface-container text-on-surface border border-outline-variant p-md text-sm">
-                        <option value="HTTP_TOKEN">HTTP Token (OAuth)</option>
-                        <option value="SSH_KEY">SSH Key (RSA/ED25519)</option>
+                        <option value="HTTP_TOKEN" {% if existing_cred and existing_cred.auth_type == 'HTTP_TOKEN' %}selected{% endif %}>HTTP Token (OAuth)</option>
+                        <option value="SSH_KEY" {% if existing_cred and existing_cred.auth_type == 'SSH_KEY' %}selected{% endif %}>SSH Key (RSA/ED25519)</option>
                     </select>
                 </div>
                 <div class="space-y-sm">
                     <label class="text-label-caps text-on-surface-variant block">USERNAME (IF TOKEN)</label>
-                    <input name="credentials[{{ loop.index0 }}][username]" class="w-full bg-surface-container text-on-surface border border-outline-variant p-md font-code-sm" type="text" placeholder="Optional"/>
+                    <input name="credentials[{{ loop.index0 }}][username]" class="w-full bg-surface-container text-on-surface border border-outline-variant p-md font-code-sm" type="text" placeholder="Optional" value="{{ existing_cred.username if existing_cred else '' }}"/>
                 </div>
                 <div class="space-y-sm">
                     <label class="text-label-caps text-on-surface-variant block">SECRET (TOKEN OR PRIVATE KEY)</label>
-                    <textarea name="credentials[{{ loop.index0 }}][secret]" class="w-full bg-surface-container-lowest text-on-surface border border-outline-variant p-md font-code-sm text-code-sm" rows="4" placeholder="Enter token or paste private key..."></textarea>
+                    <textarea name="credentials[{{ loop.index0 }}][secret]" class="w-full bg-surface-container-lowest text-on-surface border border-outline-variant p-md font-code-sm text-code-sm" rows="4" placeholder="{% if existing_cred %}Leave empty to keep current secret...{% else %}Enter token or paste private key...{% endif %}"></textarea>
                 </div>
             </div>
         </div>
@@ -152,7 +160,7 @@
 
         try {
             const response = await fetch(form.action, {
-                method: 'POST',
+                method: '{% if repo %}PATCH{% else %}POST{% endif %}',
                 headers: {
                     'Content-Type': 'application/json'
                 },

@@ -1,7 +1,7 @@
 from uuid import UUID
 from typing import List
 from litestar import Controller
-from litestar.handlers import get, post
+from litestar.handlers import get, post, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 from .schemas import RepoCreate, RepoRead
 from .services import RepoService
@@ -20,6 +20,12 @@ class RepoController(Controller):
     async def create_repo(self, db_session: AsyncSession, data: RepoCreate) -> RepoRead:
         service = RepoService(session=db_session)
         repo = await service.create_repo(data.model_dump())
+        return RepoRead.model_validate(repo)
+
+    @patch("/{repo_id:uuid}")
+    async def update_repo(self, db_session: AsyncSession, repo_id: UUID, data: RepoCreate) -> RepoRead:
+        service = RepoService(session=db_session)
+        repo = await service.update_repo(repo_id, data.model_dump())
         return RepoRead.model_validate(repo)
 
     @post("/{repo_id:uuid}/sync")

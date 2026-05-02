@@ -7,7 +7,7 @@ from database.tables.git_repo_tables import MirrorMode, PushMode, ServiceType, A
 class CredentialCreate(BaseModel):
     service_type: ServiceType
     auth_type: AuthType
-    secret: str
+    secret: Optional[str] = None
     username: Optional[str] = None
 
 class CredentialRead(BaseModel):
