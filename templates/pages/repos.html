@@ -73,7 +73,7 @@
                     <td class="px-lg py-md">
                         <a href="/repositories/{{ repo.id }}" class="flex flex-col hover:underline">
                             <span class="font-bold text-on-surface">{{ repo.repo_name }}</span>
-                            <span class="text-[10px] text-outline font-code-sm">id: {{ repo.id|truncate(8, True, '') }}</span>
+                            <span class="text-[10px] text-outline font-code-sm">id: {{ repo.id|string|truncate(8, True, '') }}</span>
                         </a>
                     </td>
                     <td class="px-lg py-md font-code-sm text-xs text-primary">{{ repo.source_remote_repo|truncate(30) }}</td>

@@ -106,7 +106,7 @@
                     {% for job in jobs %}
                     <tr class="hover:bg-surface-variant/30 transition-colors">
                         <td class="px-lg py-md font-code-sm text-primary">
-                            <a href="/jobs/{{ job.id }}" class="hover:underline">#{{ job.id|truncate(8, True, '') }}</a>
+                            <a href="/jobs/{{ job.id }}" class="hover:underline">#{{ job.id|string|truncate(8, True, '') }}</a>
                         </td>
                         <td class="px-lg py-md">
                             {{ status_badge(job.status) }}
@@ -130,7 +130,7 @@
     {% if latest_job %}
     <section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg space-y-md">
         <div class="flex items-center justify-between">
-            <h3 class="font-heading-sm text-on-surface">Latest Log Output (#{{ latest_job.id|truncate(8, True, '') }})</h3>
+            <h3 class="font-heading-sm text-on-surface">Latest Log Output (#{{ latest_job.id|string|truncate(8, True, '') }})</h3>
         </div>
         <div class="bg-black/40 rounded-lg p-md border border-outline-variant/30 font-code-sm text-code-sm overflow-hidden">
             <pre class="text-on-surface-variant whitespace-pre-wrap">

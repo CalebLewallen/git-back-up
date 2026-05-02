@@ -1,7 +1,7 @@
 {% extends "layouts/base.html" %}
 {% from "components/ui.html" import status_badge, console_line %}
 
-{% block title %}Job #{{ job.id|truncate(8, True, '') }} - Git Back Up{% endblock %}
+{% block title %}Job #{{ job.id|string|truncate(8, True, '') }} - Git Back Up{% endblock %}
 
 {% block header_title %}Sync Details{% endblock %}
 
@@ -11,10 +11,10 @@
         <nav class="flex items-center gap-xs text-label-caps text-outline mb-xs">
             <a href="/repositories/{{ repo.id }}" class="cursor-pointer hover:text-primary transition-colors">REPOS</a>
             <span class="material-symbols-outlined text-[12px]">chevron_right</span>
-            <span class="text-on-surface">#{{ job.id|truncate(8, True, '') }}</span>
+            <span class="text-on-surface">#{{ job.id|string|truncate(8, True, '') }}</span>
         </nav>
         <div class="flex items-center gap-md">
-            <h2 class="font-display-mono text-display-mono text-on-surface">Job #{{ job.id|truncate(8, True, '') }}</h2>
+            <h2 class="font-display-mono text-display-mono text-on-surface">Job #{{ job.id|string|truncate(8, True, '') }}</h2>
             {{ status_badge(job.status) }}
         </div>
         <div class="flex items-center gap-xl mt-sm text-on-surface-variant font-body-md">
