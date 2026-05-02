@@ -68,27 +68,21 @@ The application automatically creates the necessary database tables on the first
 
 ## Running the Project
 
-### 1. Start the Web Server
+### 1. Start the Application
 
 ```bash
-uv run litestar run
+uv run uvicorn main:app
 ```
-The dashboard will be available at `http://localhost:8000`.
+The dashboard will be available at `http://localhost:8000`. 
 
-### 2. Start the Background Worker
+**Note**: The background worker and scheduler are embedded into the web application and will start automatically.
 
-In a separate terminal, run the Procrastinate worker to process synchronization jobs:
+### 2. Manual Worker (Optional)
+
+If you prefer to run the worker in a separate process (recommended for high-traffic or high-resource sync jobs), you can disable the embedded worker in `main.py` and run:
 
 ```bash
 uv run procrastinate --app=workers.tasks.app worker
-```
-
-### 3. Start the Scheduler (Optional)
-
-The scheduler automatically defers periodic sync jobs. It is imported in `main.py`, but if you want to run it independently or debug:
-
-```bash
-uv run procrastinate --app=workers.tasks.app health
 ```
 
 ## First Steps

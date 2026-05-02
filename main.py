@@ -1,3 +1,4 @@
+import asyncio
 from litestar import Litestar, Request, Response
 from litestar.static_files import StaticFilesConfig
 from litestar.middleware import DefineMiddleware
@@ -21,6 +22,8 @@ async def on_startup() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(UUIDAuditBase.metadata.create_all)
     await procrastinate_app.open_async()
+    # Start the worker in the background
+    asyncio.create_task(procrastinate_app.run_worker_async())
 
 async def on_shutdown() -> None:
     await procrastinate_app.close_async()
