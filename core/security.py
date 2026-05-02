@@ -1,8 +1,25 @@
 import re
+import hashlib
+import os
+from uuid import UUID
 from cryptography.fernet import Fernet
 from core.config import settings
 
 fernet = Fernet(settings.ENCRYPTION_KEY.encode())
+
+def hash_password(password: str, salt_uuid: UUID) -> str:
+    salt = str(salt_uuid).encode()
+    # Using PBKDF2 with SHA256
+    pwd_hash = hashlib.pbkdf2_hmac(
+        'sha256',
+        password.encode('utf-8'),
+        salt,
+        100000 # iterations
+    )
+    return pwd_hash.hex()
+
+def verify_password(password: str, salt_uuid: UUID, hashed_password: str) -> bool:
+    return hash_password(password, salt_uuid) == hashed_password
 
 def encrypt_secret(secret: str) -> str:
     return fernet.encrypt(secret.encode()).decode()

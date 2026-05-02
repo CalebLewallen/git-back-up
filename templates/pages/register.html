@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Initial Setup - Git Back Up{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-full">
+    <div class="w-full max-w-md bg-surface-container-low border border-outline-variant p-lg shadow-xl">
+        <div class="flex flex-col items-center gap-sm mb-8">
+            <div class="w-12 h-12 bg-tertiary-container rounded-xl flex items-center justify-center text-white mb-2">
+                <span class="material-symbols-outlined text-3xl">person_add</span>
+            </div>
+            <h1 class="text-display-mono text-2xl uppercase tracking-tighter text-on-surface">Initial Setup</h1>
+            <p class="text-sm text-on-surface-variant font-medium text-center">Create the first user account to get started</p>
+        </div>
+
+        <form action="/register" method="POST" class="space-y-6">
+            <div class="space-y-sm">
+                <label class="text-label-caps text-on-surface-variant block">USERNAME</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-lg">person</span>
+                    <input name="username" type="text" required 
+                           class="w-full bg-surface-container text-on-surface border border-outline-variant p-md pl-12 font-code-sm focus:border-primary transition-colors"
+                           placeholder="Choose a username">
+                </div>
+            </div>
+
+            <div class="space-y-sm">
+                <label class="text-label-caps text-on-surface-variant block">PASSWORD</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-lg">key</span>
+                    <input name="password" type="password" required 
+                           class="w-full bg-surface-container text-on-surface border border-outline-variant p-md pl-12 font-code-sm focus:border-primary transition-colors"
+                           placeholder="Choose a strong password">
+                </div>
+            </div>
+
+            <button type="submit" 
+                    class="w-full py-md bg-tertiary-container text-on-tertiary-container text-label-caps font-black tracking-widest flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all mt-8">
+                CREATE ACCOUNT
+                <span class="material-symbols-outlined text-lg">arrow_forward</span>
+            </button>
+        </form>
+        
+        <div class="mt-8 pt-6 border-t border-outline-variant text-center">
+            <p class="text-xs text-on-surface-variant">Registration is only available for the first user.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

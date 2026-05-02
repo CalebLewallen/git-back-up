@@ -34,7 +34,7 @@ async def schedule_syncs(worker: Any):
             if not last_job or last_job.completed_at is None:
                 should_sync = True
             else:
-                elapsed = datetime.now(timezone.utc) - last_job.completed_at
+                elapsed = datetime.now() - last_job.completed_at
                 if elapsed >= timedelta(hours=repo.replication_interval_hours):
                     should_sync = True
             

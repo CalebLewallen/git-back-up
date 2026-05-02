@@ -7,18 +7,66 @@ from typing import Optional, List, Tuple
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import select
 from database.repositories.git_repo_repo import GitRepoRepository, SyncJobRepository, CredentialsRepository, WebhookRepository, GitRepoBranchRepository
-from database.tables.git_repo_tables import JobStatus, Webhook, AuthType, MirrorMode
+from database.tables.git_repo_tables import JobStatus, Webhook, AuthType, MirrorMode, ServiceType
 from services.git_cli import git_service
 from services.notifications import notification_service
 from core.config import settings
 from core.security import decrypt_secret, mask_secrets
 
-# ... (keep existing imports)
+# Initialize procrastinate app
+app = procrastinate.App(connector=procrastinate.PsycopgConnector(conninfo=settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")))
+
+async def get_repo_auth(repo_id: UUID, service_type: str, cred_repo: CredentialsRepository) -> Tuple[Optional[str], Optional[str]]:
+    creds = await cred_repo.list(git_repo_id=repo_id, service_type=service_type)
+    if not creds:
+        return None, None
+    
+    cred = creds[0]
+    secret = decrypt_secret(cred.encrypted_secret)
+    
+    if cred.auth_type == AuthType.HTTP_TOKEN:
+        return secret, None
+    elif cred.auth_type == AuthType.SSH_KEY:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+            f.write(secret)
+            ssh_key_path = f.name
+        os.chmod(ssh_key_path, 0o600)
+        return None, ssh_key_path
+    return None, None
 
 def validate_git_url(url: str):
     # Prevent argument injection by ensuring URL doesn't start with -
     if url.strip().startswith("-"):
         raise ValueError("Invalid git URL: starts with '-'")
+
+@app.task
+async def send_notifications_task(job_id_str: str):
+    job_id = UUID(job_id_str)
+    engine = create_async_engine(settings.DATABASE_URL)
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    
+    async with async_session() as session:
+        job_repo = SyncJobRepository(session=session)
+        repo_repo = GitRepoRepository(session=session)
+        webhook_repo = WebhookRepository(session=session)
+        
+        job = await job_repo.get(job_id)
+        repo = await repo_repo.get(job.git_repo_id)
+        webhooks = await webhook_repo.list()
+        
+        payload = {
+            "job_id": str(job_id),
+            "repo_id": str(repo.id),
+            "repo_name": repo.repo_name,
+            "status": job.status,
+            "started_at": job.started_at.isoformat() if job.started_at else None,
+            "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+        }
+        
+        for webhook in webhooks:
+            await notification_service.send_webhook(webhook, payload)
+            
+    await engine.dispose()
 
 @app.task
 async def sync_repo_task(repo_id_str: str, job_id_str: str):
@@ -41,7 +89,7 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
         job = await job_repo.get(job_id)
         
         job.status = JobStatus.IN_PROGRESS
-        job.started_at = datetime.now(timezone.utc)
+        job.started_at = datetime.now()
         await session.commit()
         
         try:
@@ -97,13 +145,16 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
             job.status = JobStatus.FAILED
             job.stderr_log = mask_secrets(str(e), secrets_to_mask)
         
-        job.completed_at = datetime.now(timezone.utc)
+        job.completed_at = datetime.now()
         await session.commit()
         
         # Cleanup SSH keys
         for key in ssh_keys:
             if os.path.exists(key):
-                os.remove(key)
+                try:
+                    os.remove(key)
+                except OSError:
+                    pass
         
         await send_notifications_task.defer_async(job_id_str=str(job_id))
     

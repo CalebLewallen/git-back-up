@@ -1,6 +1,10 @@
 from datetime import datetime, timedelta, timezone
-from litestar import Controller, Get
+from uuid import UUID
+from litestar import Controller, Request, Response
+from litestar.handlers import get, post
 from litestar.response import Template
+from litestar.params import Body
+from litestar.enums import RequestEncodingType
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from database.tables.git_repo_tables import GitRepo, SyncJob, JobStatus
@@ -9,7 +13,52 @@ from database.repositories.git_repo_repo import GitRepoRepository
 class UIController(Controller):
     path = "/"
 
-    @Get("/repositories")
+    @get("/settings")
+    async def settings_page(self) -> Template:
+        return Template(template_name="pages/settings.html", context={"active_page": "settings"})
+
+    @post("/settings/password")
+    async def change_password(
+        self,
+        request: Request,
+        db_session: AsyncSession,
+        data: dict = Body(media_type=RequestEncodingType.URL_ENCODED)
+    ) -> Response:
+        from database.repositories.user_repo import UserRepository
+        from core.security import verify_password, hash_password
+        from uuid import uuid4
+
+        user_repo = UserRepository(session=db_session)
+        user = request.user
+        
+        old_password = data.get("old_password")
+        new_password = data.get("new_password")
+        
+        if not verify_password(old_password, user.salt_uuid, user.password_hash):
+            return Template(
+                template_name="pages/settings.html",
+                context={
+                    "error": "Current password is incorrect",
+                    "active_page": "settings"
+                }
+            )
+            
+        new_salt = uuid4()
+        user.password_hash = hash_password(new_password, new_salt)
+        user.salt_uuid = new_salt
+        
+        await user_repo.update(user)
+        await db_session.commit()
+        
+        return Template(
+            template_name="pages/settings.html",
+            context={
+                "message": "Password updated successfully",
+                "active_page": "settings"
+            }
+        )
+
+    @get("/repositories")
     async def repo_list_page(self, db_session: AsyncSession) -> Template:
         repo_repo = GitRepoRepository(session=db_session)
         repos = await repo_repo.list()
@@ -45,7 +94,7 @@ class UIController(Controller):
             }
         )
 
-    @Get("/repositories/{repo_id:uuid}")
+    @get("/repositories/{repo_id:uuid}")
     async def repo_detail_page(self, db_session: AsyncSession, repo_id: UUID) -> Template:
         repo_repo = GitRepoRepository(session=db_session)
         repo = await repo_repo.get(repo_id)
@@ -67,14 +116,14 @@ class UIController(Controller):
             }
         )
 
-    @Get("/repositories/new")
+    @get("/repositories/new")
     async def repo_create_page(self) -> Template:
         return Template(
             template_name="pages/repo_edit.html",
             context={"repo": None, "active_page": "repos"}
         )
 
-    @Get("/repositories/{repo_id:uuid}/edit")
+    @get("/repositories/{repo_id:uuid}/edit")
     async def repo_edit_page(self, db_session: AsyncSession, repo_id: UUID) -> Template:
         repo_repo = GitRepoRepository(session=db_session)
         repo = await repo_repo.get(repo_id)
@@ -83,7 +132,7 @@ class UIController(Controller):
             context={"repo": repo, "active_page": "repos"}
         )
 
-    @Get("/jobs")
+    @get("/jobs")
     async def job_list_page(self, db_session: AsyncSession) -> Template:
         # Re-use repo_list logic or dedicated job list if needed
         # For simplicity, we'll create a quick job list
@@ -99,7 +148,7 @@ class UIController(Controller):
             })
         return Template(template_name="pages/dashboard.html", context={"recent_jobs": jobs, "stats": {"total_repos": 0, "success_24h": 0, "failed": 0}, "active_page": "jobs"})
 
-    @Get("/jobs/{job_id:uuid}")
+    @get("/jobs/{job_id:uuid}")
     async def job_detail_page(self, db_session: AsyncSession, job_id: UUID) -> Template:
         stmt = select(SyncJob, GitRepo).join(GitRepo).where(SyncJob.id == job_id)
         result = await db_session.execute(stmt)
@@ -117,7 +166,7 @@ class UIController(Controller):
             }
         )
 
-    @Get("/webhooks")
+    @get("/webhooks")
     async def webhook_page(self, db_session: AsyncSession) -> Template:
         from database.repositories.git_repo_repo import WebhookRepository
         repo = WebhookRepository(session=db_session)
@@ -130,14 +179,14 @@ class UIController(Controller):
             }
         )
 
-    @Get("/")
+    @get("/")
     async def dashboard_page(self, db_session: AsyncSession) -> Template:
         # Calculate dashboard stats
         repo_count_stmt = select(func.count()).select_from(GitRepo)
         repo_count = await db_session.execute(repo_count_stmt)
         total_repos = repo_count.scalar() or 0
         
-        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+        yesterday = datetime.now() - timedelta(days=1)
         success_stmt = select(func.count()).select_from(SyncJob).where(SyncJob.status == JobStatus.SUCCESS, SyncJob.completed_at >= yesterday)
         success_count = await db_session.execute(success_stmt)
         
