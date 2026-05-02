@@ -151,7 +151,8 @@ async def sync_repo_task(repo_id_str: str, job_id_str: str):
                 force_push=(repo.push_mode == "FORCE"),
                 source_ssh_key=source_ssh,
                 target_ssh_key=target_ssh,
-                ssh_port=repo.ssh_port
+                source_ssh_port=repo.source_ssh_port,
+                target_ssh_port=repo.target_ssh_port
             )
             
             logger.info(f"Git mirror finished with return code {result.returncode}")

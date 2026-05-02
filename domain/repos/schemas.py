@@ -23,7 +23,8 @@ class RepoCreate(BaseModel):
     repo_name: str
     source_remote_repo: str
     target_remote_repo: str
-    ssh_port: int = 22
+    source_ssh_port: int = 22
+    target_ssh_port: int = 22
     replication_interval_hours: int = 24
     mirror_mode: MirrorMode = MirrorMode.ALL_BRANCHES
     push_mode: PushMode = PushMode.SAFE
@@ -35,7 +36,8 @@ class RepoRead(BaseModel):
     repo_name: str
     source_remote_repo: str
     target_remote_repo: str
-    ssh_port: int
+    source_ssh_port: int
+    target_ssh_port: int
     replication_interval_hours: int
     mirror_mode: MirrorMode
     push_mode: PushMode

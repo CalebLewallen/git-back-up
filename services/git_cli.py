@@ -71,7 +71,8 @@ class GitService:
         force_push: bool = False,
         source_ssh_key: Optional[str] = None,
         target_ssh_key: Optional[str] = None,
-        ssh_port: int = 22,
+        source_ssh_port: int = 22,
+        target_ssh_port: int = 22,
         timeout_seconds: int = 1800
     ) -> GitResult:
         # Check disk space (require at least 500MB free)
@@ -88,14 +89,14 @@ class GitService:
         if repo_dir.exists():
             shutil.rmtree(repo_dir, ignore_errors=True)
         
-        def get_ssh_env(key_path: Optional[str]):
+        def get_ssh_env(key_path: Optional[str], port: int):
             if not key_path:
                 return {}
             # Use -p flag for custom port support
-            return {"GIT_SSH_COMMAND": f"ssh -i {key_path} -p {ssh_port} -o StrictHostKeyChecking=no"}
+            return {"GIT_SSH_COMMAND": f"ssh -i {key_path} -p {port} -o StrictHostKeyChecking=no"}
 
         # 1. Clone/Fetch from Source
-        source_env = get_ssh_env(source_ssh_key)
+        source_env = get_ssh_env(source_ssh_key, source_ssh_port)
         if not branches:
             # Full mirror
             logger.info(f"[{repo_id}] Cloner source: {source_url}")
@@ -120,7 +121,7 @@ class GitService:
             return res
 
         # 2. Push to Target
-        target_env = get_ssh_env(target_ssh_key)
+        target_env = get_ssh_env(target_ssh_key, target_ssh_port)
         if not branches:
             push_args = ["push", "--mirror"]
         else:
