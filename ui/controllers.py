@@ -126,6 +126,8 @@ class UIController(Controller):
     @get("/repositories/{repo_id:uuid}/edit")
     async def repo_edit_page(self, db_session: AsyncSession, repo_id: UUID) -> Template:
         from sqlalchemy.orm import selectinload
+        # Ensure we use the model from database.tables
+        from database.tables import GitRepo
         stmt = select(GitRepo).options(
             selectinload(GitRepo.credentials),
             selectinload(GitRepo.branches)
