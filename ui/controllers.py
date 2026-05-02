@@ -142,6 +142,24 @@ class UIController(Controller):
 
     @get("/jobs")
     async def job_list_page(self, db_session: AsyncSession) -> Template:
+        # Calculate stats for the dashboard template
+        repo_count_stmt = select(func.count()).select_from(GitRepo)
+        repo_count = await db_session.execute(repo_count_stmt)
+        total_repos = repo_count.scalar() or 0
+        
+        yesterday = datetime.now() - timedelta(days=1)
+        success_stmt = select(func.count()).select_from(SyncJob).where(SyncJob.status == JobStatus.SUCCESS, SyncJob.completed_at >= yesterday)
+        success_count = await db_session.execute(success_stmt)
+        
+        failed_stmt = select(func.count()).select_from(SyncJob).where(SyncJob.status == JobStatus.FAILED)
+        failed_count = await db_session.execute(failed_stmt)
+
+        stats = {
+            "total_repos": total_repos,
+            "success_24h": success_count.scalar() or 0,
+            "failed": failed_count.scalar() or 0
+        }
+
         stmt = select(SyncJob, GitRepo.repo_name).join(GitRepo).order_by(SyncJob.started_at.desc()).limit(50)
         result = await db_session.execute(stmt)
         jobs = []
@@ -150,9 +168,9 @@ class UIController(Controller):
                 "id": str(job.id),
                 "status": job.status,
                 "repo_name": repo_name,
-                "started_at": job.started_at
+                "timestamp": job.started_at.strftime("%Y-%m-%d %H:%M:%S") if job.started_at else "Pending"
             })
-        return Template(template_name="pages/dashboard.html", context={"recent_jobs": jobs, "stats": {"total_repos": 0, "success_24h": 0, "failed": 0}, "active_page": "jobs"})
+        return Template(template_name="pages/dashboard.html", context={"recent_jobs": jobs, "stats": stats, "active_page": "jobs"})
 
     @get("/jobs/{job_id:uuid}")
     async def job_detail_page(self, db_session: AsyncSession, job_id: UUID) -> Template:
