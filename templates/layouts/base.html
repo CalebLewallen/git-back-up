@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}Git Back Up{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline": "#8d90a0",
+                      "on-primary-fixed-variant": "#003ea8",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "on-tertiary": "#581e00",
+                      "secondary-fixed": "#d3e4fe",
+                      "on-tertiary-fixed": "#360f00",
+                      "inverse-surface": "#e1e2ed",
+                      "surface-bright": "#373942",
+                      "background": "#11131b",
+                      "tertiary-container": "#bc4800",
+                      "primary-fixed-dim": "#b4c5ff",
+                      "on-primary-fixed": "#00174b",
+                      "surface-tint": "#b4c5ff",
+                      "primary-container": "#2563eb",
+                      "primary-fixed": "#dbe1ff",
+                      "secondary": "#b7c8e1",
+                      "on-error": "#690005",
+                      "surface-container-high": "#282a32",
+                      "tertiary": "#ffb596",
+                      "on-background": "#e1e2ed",
+                      "inverse-on-surface": "#2e3039",
+                      "tertiary-fixed-dim": "#ffb596",
+                      "inverse-primary": "#0053db",
+                      "tertiary-fixed": "#ffdbcd",
+                      "surface-container-lowest": "#0c0e16",
+                      "on-secondary-container": "#a9bad3",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "on-secondary-fixed": "#0b1c30",
+                      "surface-dim": "#11131b",
+                      "on-secondary": "#213145",
+                      "on-primary": "#002a78",
+                      "on-tertiary-fixed-variant": "#7d2d00",
+                      "on-surface": "#e1e2ed",
+                      "on-primary-container": "#eeefff",
+                      "surface-container-low": "#191b23",
+                      "outline-variant": "#434655",
+                      "surface-container": "#1d1f27",
+                      "surface-variant": "#32343d",
+                      "primary": "#b4c5ff",
+                      "on-error-container": "#ffdad6",
+                      "surface-container-highest": "#32343d",
+                      "error-container": "#93000a",
+                      "surface": "#11131b",
+                      "error": "#ffb4ab",
+                      "success": "#81c784",
+                      "on-surface-variant": "#c3c6d7",
+                      "on-tertiary-container": "#ffede6",
+                      "secondary-container": "#3a4a5f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "lg": "24px",
+                      "xs": "4px",
+                      "margin": "24px",
+                      "md": "16px",
+                      "base": "4px",
+                      "sm": "8px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "heading-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "display-mono": ["Space Grotesk"],
+                      "label-caps": ["Inter"],
+                      "code-sm": ["Space Grotesk"]
+              },
+              "fontSize": {
+                      "heading-sm": ["18px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "1.6", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "display-mono": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "label-caps": ["11px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                      "code-sm": ["13px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #11131b;
+            color: #e1e2ed;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #11131b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #434655;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-hidden">
+    <!-- SideNavBar Shell -->
+    <aside class="fixed inset-y-0 left-0 w-64 flex flex-col z-50 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 font-inter text-sm font-medium">
+        <div class="p-lg flex flex-col gap-sm">
+            <div class="flex items-center gap-md px-md py-sm">
+                <div class="w-8 h-8 bg-primary-container rounded flex items-center justify-center text-white">
+                    <span class="material-symbols-outlined">database</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-blue-600 dark:text-blue-500 leading-tight">Git Back Up</h1>
+                    <p class="text-[10px] text-slate-500 font-code-sm">v1.0.0-beta</p>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-1 px-md space-y-base py-md">
+            <a href="/" class="flex items-center gap-md px-md py-sm {% if active_page == 'dashboard' %}bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-r-2 border-blue-600 dark:border-blue-500{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50{% endif %} transition-all duration-150 ease-in-out cursor-pointer rounded">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/repositories" class="flex items-center gap-md px-md py-sm {% if active_page == 'repos' %}bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-r-2 border-blue-600 dark:border-blue-500{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50{% endif %} transition-all duration-150 ease-in-out cursor-pointer rounded">
+                <span class="material-symbols-outlined">database</span>
+                <span>Repositories</span>
+            </a>
+            <a href="/jobs" class="flex items-center gap-md px-md py-sm {% if active_page == 'jobs' %}bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-r-2 border-blue-600 dark:border-blue-500{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50{% endif %} transition-all duration-150 ease-in-out cursor-pointer rounded">
+                <span class="material-symbols-outlined">history</span>
+                <span>Sync Jobs</span>
+            </a>
+            <a href="/webhooks" class="flex items-center gap-md px-md py-sm {% if active_page == 'webhooks' %}bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-r-2 border-blue-600 dark:border-blue-500{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50{% endif %} transition-all duration-150 ease-in-out cursor-pointer rounded">
+                <span class="material-symbols-outlined">webhook</span>
+                <span>Webhooks</span>
+            </a>
+        </nav>
+        <footer class="p-md mt-auto border-t border-slate-200 dark:border-slate-800 space-y-base">
+            <div class="flex items-center gap-md px-md py-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800/50 transition-all duration-150 ease-in-out cursor-pointer rounded">
+                <span class="material-symbols-outlined">settings</span>
+                <span>Settings</span>
+            </div>
+        </footer>
+    </aside>
+
+    <!-- TopAppBar Shell -->
+    <header class="fixed top-0 right-0 left-0 h-16 flex items-center justify-between px-6 z-40 md:left-64 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-none font-inter antialiased">
+        <div class="flex items-center gap-md">
+            <h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">{% block header_title %}{% endblock %}</h2>
+            {% block header_badge %}{% endblock %}
+        </div>
+        <div class="flex items-center gap-lg">
+            <div class="flex items-center gap-md">
+                <button class="p-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors cursor-pointer active:opacity-80 rounded">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Canvas -->
+    <main class="fixed inset-0 pt-16 pl-0 md:pl-64 bg-background overflow-hidden flex flex-col">
+        <div class="flex-1 overflow-auto custom-scrollbar p-lg">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</body>
+</html>

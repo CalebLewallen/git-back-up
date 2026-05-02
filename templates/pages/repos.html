@@ -1,0 +1,119 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Repositories - Git Back Up{% endblock %}
+{% block header_title %}Repositories{% endblock %}
+{% block header_badge %}
+<span class="bg-surface-container text-outline px-sm py-xs rounded text-[10px] font-bold">{{ repos|length }} TOTAL</span>
+{% endblock %}
+
+{% block content %}
+<!-- Quick Stats / Bento Header -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-lg">
+    <div class="bg-surface-container-low border border-outline-variant p-md rounded-lg flex flex-col gap-xs">
+        <span class="text-label-caps text-outline uppercase tracking-wider">Healthy Repos</span>
+        <div class="flex items-baseline gap-sm">
+            <span class="text-display-mono text-primary">{{ stats.healthy }}</span>
+            <span class="text-[10px] text-green-400">+2 today</span>
+        </div>
+    </div>
+    <div class="bg-surface-container-low border border-outline-variant p-md rounded-lg flex flex-col gap-xs">
+        <span class="text-label-caps text-outline uppercase tracking-wider">Sync Failures</span>
+        <div class="flex items-baseline gap-sm">
+            <span class="text-display-mono text-error">{{ stats.failed }}</span>
+            <span class="text-[10px] text-error">-1 from last hour</span>
+        </div>
+    </div>
+    <div class="bg-surface-container-low border border-outline-variant p-md rounded-lg flex flex-col gap-xs">
+        <span class="text-label-caps text-outline uppercase tracking-wider">Total Traffic</span>
+        <div class="flex items-baseline gap-sm">
+            <span class="text-display-mono text-on-surface">1.2 TB</span>
+            <span class="text-[10px] text-outline">Stored</span>
+        </div>
+    </div>
+    <div class="bg-surface-container-low border border-outline-variant p-md rounded-lg flex flex-col gap-xs">
+        <span class="text-label-caps text-outline uppercase tracking-wider">Last Sync Global</span>
+        <div class="flex items-baseline gap-sm">
+            <span class="text-display-mono text-on-surface">4m</span>
+            <span class="text-[10px] text-outline">ago</span>
+        </div>
+    </div>
+</div>
+
+<!-- Table Container -->
+<div class="bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
+    <!-- Filters Bar -->
+    <div class="px-lg py-md border-b border-outline-variant flex items-center justify-between">
+        <div class="flex items-center gap-md">
+            <button class="flex items-center gap-sm bg-surface-variant px-md py-xs rounded text-xs font-semibold hover:bg-outline-variant transition-colors">
+                <span class="material-symbols-outlined text-sm">filter_list</span>
+                Filter By Status
+            </button>
+        </div>
+        <a href="/repositories/new" class="bg-primary-container text-on-primary-container px-md py-sm rounded-lg text-xs font-bold flex items-center gap-sm hover:opacity-90 active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-sm">add</span>
+            New Repository
+        </a>
+    </div>
+
+    <!-- Repositories Table -->
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-surface-container-high/50 border-b border-outline-variant">
+                    <th class="px-lg py-md text-label-caps text-outline uppercase">Repository Name</th>
+                    <th class="px-lg py-md text-label-caps text-outline uppercase">Source URL</th>
+                    <th class="px-lg py-md text-label-caps text-outline uppercase">Target URL</th>
+                    <th class="px-lg py-md text-label-caps text-outline uppercase text-center">Status</th>
+                    <th class="px-lg py-md text-label-caps text-outline uppercase text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-outline-variant/30">
+                {% for repo in repos %}
+                <tr class="hover:bg-surface-variant/20 transition-colors group">
+                    <td class="px-lg py-md">
+                        <a href="/repositories/{{ repo.id }}" class="flex flex-col hover:underline">
+                            <span class="font-bold text-on-surface">{{ repo.repo_name }}</span>
+                            <span class="text-[10px] text-outline font-code-sm">id: {{ repo.id|truncate(8, True, '') }}</span>
+                        </a>
+                    </td>
+                    <td class="px-lg py-md font-code-sm text-xs text-primary">{{ repo.source_remote_repo|truncate(30) }}</td>
+                    <td class="px-lg py-md font-code-sm text-xs text-outline">{{ repo.target_remote_repo|truncate(30) }}</td>
+                    <td class="px-lg py-md">
+                        <div class="flex justify-center">
+                            {% if repo.status == 'SUCCESS' %}
+                            <div class="bg-green-500/20 text-green-400 px-sm py-xs rounded-full flex items-center gap-xs text-[10px] font-bold uppercase tracking-tight">
+                                <div class="w-1.5 h-1.5 rounded-full bg-green-400"></div>
+                                Healthy
+                            </div>
+                            {% elif repo.status == 'FAILED' %}
+                            <div class="bg-error-container/20 text-error px-sm py-xs rounded-full flex items-center gap-xs text-[10px] font-bold uppercase tracking-tight">
+                                <div class="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></div>
+                                Failed
+                            </div>
+                            {% else %}
+                            <div class="bg-outline-variant/30 text-outline px-sm py-xs rounded-full flex items-center gap-xs text-[10px] font-bold uppercase tracking-tight">
+                                <div class="w-1.5 h-1.5 rounded-full bg-outline animate-pulse"></div>
+                                Pending
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-lg py-md text-right">
+                        <div class="flex items-center justify-end gap-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                            <form action="/api/repos/{{ repo.id }}/sync" method="POST">
+                                <button class="p-xs hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors" title="Sync Now">
+                                    <span class="material-symbols-outlined text-sm">sync</span>
+                                </button>
+                            </form>
+                            <button class="p-xs hover:bg-outline-variant text-outline rounded-lg transition-colors">
+                                <span class="material-symbols-outlined text-sm">settings</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

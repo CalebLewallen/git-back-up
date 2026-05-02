@@ -1,0 +1,71 @@
+{% extends "layouts/base.html" %}
+{% from "components/ui.html" import status_badge, console_line %}
+
+{% block title %}Job #{{ job.id|truncate(8, True, '') }} - Git Back Up{% endblock %}
+
+{% block header_title %}Sync Details{% endblock %}
+
+{% block content %}
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-gutter items-start">
+    <div class="lg:col-span-2 flex flex-col gap-sm">
+        <nav class="flex items-center gap-xs text-label-caps text-outline mb-xs">
+            <a href="/repositories/{{ repo.id }}" class="cursor-pointer hover:text-primary transition-colors">REPOS</a>
+            <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+            <span class="text-on-surface">#{{ job.id|truncate(8, True, '') }}</span>
+        </nav>
+        <div class="flex items-center gap-md">
+            <h2 class="font-display-mono text-display-mono text-on-surface">Job #{{ job.id|truncate(8, True, '') }}</h2>
+            {{ status_badge(job.status) }}
+        </div>
+        <div class="flex items-center gap-xl mt-sm text-on-surface-variant font-body-md">
+            <div class="flex items-center gap-xs">
+                <span class="material-symbols-outlined text-outline">database</span>
+                <span class="font-semibold text-on-surface">{{ repo.repo_name }}</span>
+            </div>
+            <div class="flex items-center gap-xs">
+                <span class="material-symbols-outlined text-outline">calendar_today</span>
+                <span>{{ job.started_at.strftime('%Y-%m-%d %H:%M:%S') if job.started_at else 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-gutter mt-lg">
+    <aside class="xl:col-span-1 flex flex-col gap-gutter">
+        <div class="bg-surface-container-low border border-outline-variant rounded-xl p-lg flex flex-col gap-lg">
+            <div>
+                <h3 class="text-label-caps text-outline mb-md uppercase">Metadata</h3>
+                <div class="space-y-sm">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-on-surface-variant">Job Type</span>
+                        <span class="text-on-surface font-code-sm">{{ job.job_type }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="xl:col-span-3 flex flex-col bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-2xl">
+        <div class="bg-surface-container-high px-lg py-sm flex items-center justify-between border-b border-outline-variant">
+            <div class="flex items-center gap-sm">
+                <div class="flex gap-1.5">
+                    <div class="w-3 h-3 rounded-full bg-[#ff5f57]"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+                    <div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+                </div>
+                <span class="text-xs font-code-sm text-outline ml-md">logs --job {{ job.id }}</span>
+            </div>
+        </div>
+        <div class="flex-1 overflow-auto p-lg font-code-sm text-code-sm leading-relaxed text-on-surface-variant bg-slate-950/80 backdrop-blur-sm custom-scrollbar max-h-[600px]">
+            {% set logs = (job.stdout_log or '') + (job.stderr_log or '') %}
+            {% if logs %}
+                {% for line in logs.split('\n') %}
+                    {{ console_line(loop.index, line) }}
+                {% endfor %}
+            {% else %}
+                <p class="italic opacity-50">No log output available for this job.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

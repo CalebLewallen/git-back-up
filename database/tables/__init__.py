@@ -1,5 +1,11 @@
-from .git_repo_tables import GitRepo
+from litestar.plugins.sqlalchemy import UUIDAuditBase
+from .git_repo_tables import GitRepo, GitRepoBranch, Credentials, SyncJob, Webhook
 
 __all__ = [
-    'GitRepo'
+    'UUIDAuditBase',
+    'GitRepo',
+    'GitRepoBranch',
+    'Credentials',
+    'SyncJob',
+    'Webhook'
 ]

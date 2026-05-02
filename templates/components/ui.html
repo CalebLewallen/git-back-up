@@ -1,0 +1,50 @@
+{% macro stats_card(title, value, subtitle, icon, color='primary') %}
+<div class="bg-surface-container border border-outline-variant p-lg rounded-xl relative overflow-hidden group">
+    <div class="absolute top-0 right-0 p-lg opacity-10 group-hover:opacity-20 transition-opacity">
+        <span class="material-symbols-outlined text-[64px]">{{ icon }}</span>
+    </div>
+    <div class="flex items-center gap-sm text-on-surface-variant mb-sm">
+        <span class="material-symbols-outlined text-md {% if color == 'error' %}text-error{% endif %}">{{ icon }}</span>
+        <span class="font-label-caps text-label-caps uppercase tracking-widest">{{ title }}</span>
+    </div>
+    <div class="text-[48px] font-display-mono {% if color == 'error' %}text-error{% else %}text-primary{% endif %} leading-none mb-xs">{{ value }}</div>
+    <p class="text-code-sm text-outline flex items-center gap-xs">
+        {{ subtitle|safe }}
+    </p>
+</div>
+{% endmacro %}
+
+{% macro status_badge(status) %}
+    {% if status == 'SUCCESS' %}
+    <span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-green-500/20 text-green-400 text-[10px] font-bold uppercase">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Success
+    </span>
+    {% elif status == 'FAILED' %}
+    <span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-red-500/20 text-red-400 text-[10px] font-bold uppercase">
+        <span class="w-1.5 h-1.5 rounded-full bg-red-500 pulse"></span> Failed
+    </span>
+    {% else %}
+    <span class="inline-flex items-center gap-xs px-sm py-xs rounded-full bg-slate-500/20 text-slate-400 text-[10px] font-bold uppercase">
+        <span class="w-1.5 h-1.5 rounded-full bg-slate-400 pulse"></span> Pending
+    </span>
+    {% endif %}
+{% endmacro %}
+
+{% macro stats_item(label, value, icon, color_class='bg-primary/10', text_color='text-primary') %}
+<div class="flex-1 min-w-[200px] bg-surface-container rounded-lg p-md border border-outline-variant/30 flex items-center gap-md">
+    <div class="w-10 h-10 rounded {{ color_class }} flex items-center justify-center">
+        <span class="material-symbols-outlined {{ text_color }}">{{ icon }}</span>
+    </div>
+    <div>
+        <p class="text-[10px] text-outline font-label-caps">{{ label }}</p>
+        <p class="text-heading-sm text-on-surface">{{ value }}</p>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro console_line(number, content) %}
+<div class="flex mb-1">
+    <span class="user-select-none border-right border-outline-variant pr-md mr-md text-outline text-right min-w-[32px]">{{ number }}</span>
+    <span class="ml-2 whitespace-pre-wrap">{{ content }}</span>
+</div>
+{% endmacro %}

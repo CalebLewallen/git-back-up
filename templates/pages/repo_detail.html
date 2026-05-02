@@ -1,0 +1,143 @@
+{% extends "layouts/base.html" %}
+{% from "components/ui.html" import status_badge, stats_item %}
+
+{% block title %}{{ repo.repo_name }} - Repository Detail{% endblock %}
+
+{% block header_title %}
+<div class="hidden md:flex items-center gap-2">
+    <span class="text-slate-400 text-xs font-label-caps">REPOSITORIES</span>
+    <span class="material-symbols-outlined text-xs text-slate-400">chevron_right</span>
+    <span class="text-slate-900 dark:text-white font-semibold">{{ repo.repo_name }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-lg">
+    <!-- Repository Header -->
+    <section class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+        <div class="space-y-xs">
+            <div class="flex items-center gap-sm">
+                <h2 class="text-display-mono font-display-mono text-on-surface">{{ repo.repo_name }}</h2>
+                {{ status_badge(latest_job.status if latest_job else 'PENDING') }}
+            </div>
+            <p class="text-on-surface-variant font-body-md">Mirroring from {{ repo.source_remote_repo|truncate(50) }} to {{ repo.target_remote_repo|truncate(50) }}.</p>
+        </div>
+        <div class="flex flex-wrap gap-sm">
+            <form action="/api/repos/{{ repo.id }}/sync" method="POST">
+                <button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-heading-sm text-sm hover:opacity-90 transition-all">
+                    <span class="material-symbols-outlined text-lg">sync</span>
+                    Trigger Manual Sync
+                </button>
+            </form>
+            <a href="/repositories/{{ repo.id }}/edit" class="flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface rounded-lg font-heading-sm text-sm hover:bg-surface-variant transition-all">
+                <span class="material-symbols-outlined text-lg">edit</span>
+                Edit Config
+            </a>
+        </div>
+    </section>
+
+    <!-- Configuration Summary Bento Grid -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+        <div class="col-span-1 md:col-span-2 bg-surface-container rounded-xl p-lg border border-outline-variant space-y-md">
+            <h3 class="font-label-caps text-on-surface-variant">SOURCE & DESTINATION</h3>
+            <div class="space-y-md">
+                <div class="flex flex-col gap-xs">
+                    <label class="text-[10px] text-outline uppercase font-bold tracking-widest">Source URL</label>
+                    <div class="flex items-center gap-sm bg-surface-container-lowest p-sm rounded border border-outline-variant/30">
+                        <span class="material-symbols-outlined text-primary text-lg">cloud_download</span>
+                        <code class="font-code-sm text-code-sm text-primary">{{ repo.source_remote_repo }}</code>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-xs">
+                    <label class="text-[10px] text-outline uppercase font-bold tracking-widest">Mirror Target</label>
+                    <div class="flex items-center gap-sm bg-surface-container-lowest p-sm rounded border border-outline-variant/30">
+                        <span class="material-symbols-outlined text-tertiary text-lg">cloud_upload</span>
+                        <code class="font-code-sm text-code-sm text-tertiary">{{ repo.target_remote_repo }}</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-surface-container-high rounded-xl p-lg border border-outline-variant space-y-md flex flex-col justify-between">
+            <div>
+                <h3 class="font-label-caps text-on-surface-variant mb-md">SCHEDULE & SETTINGS</h3>
+                <div class="space-y-sm">
+                    <div class="flex justify-between items-center py-2 border-b border-outline-variant/20">
+                        <span class="text-outline text-xs">Interval</span>
+                        <span class="text-on-surface font-semibold text-sm">Every {{ repo.replication_interval_hours }}h</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-outline-variant/20">
+                        <span class="text-outline text-xs">Mirror Mode</span>
+                        <span class="text-on-surface font-semibold text-sm">{{ repo.mirror_mode }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-outline text-xs">Push Mode</span>
+                        <span class="text-on-surface font-semibold text-sm">{{ repo.push_mode }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <section class="flex flex-wrap gap-gutter">
+        {{ stats_item("Sync Uptime (24h)", "100%", "check_circle", color_class="bg-green-500/10", text_color="text-green-500") }}
+        {{ stats_item("Total Syncs", jobs|length, "history_edu", color_class="bg-secondary-container", text_color="text-on-secondary-container") }}
+    </section>
+
+    <!-- Sync History Table -->
+    <section class="bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
+        <div class="p-md border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+            <h3 class="font-heading-sm text-on-surface flex items-center gap-2">
+                <span class="material-symbols-outlined text-lg">history</span>
+                Sync History
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-surface-container-highest/30 border-b border-outline-variant">
+                        <th class="px-lg py-md text-[10px] font-label-caps text-outline">JOB ID</th>
+                        <th class="px-lg py-md text-[10px] font-label-caps text-outline">STATUS</th>
+                        <th class="px-lg py-md text-[10px] font-label-caps text-outline">TIMESTAMP</th>
+                        <th class="px-lg py-md text-[10px] font-label-caps text-outline">DURATION</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant/10">
+                    {% for job in jobs %}
+                    <tr class="hover:bg-surface-variant/30 transition-colors">
+                        <td class="px-lg py-md font-code-sm text-primary">
+                            <a href="/jobs/{{ job.id }}" class="hover:underline">#{{ job.id|truncate(8, True, '') }}</a>
+                        </td>
+                        <td class="px-lg py-md">
+                            {{ status_badge(job.status) }}
+                        </td>
+                        <td class="px-lg py-md text-on-surface-variant text-sm">{{ job.started_at.strftime('%Y-%m-%d %H:%M:%S') if job.started_at else 'Pending' }}</td>
+                        <td class="px-lg py-md text-on-surface-variant text-sm">
+                            {% if job.completed_at and job.started_at %}
+                                {{ (job.completed_at - job.started_at).seconds }}s
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Latest Log Output -->
+    {% if latest_job %}
+    <section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg space-y-md">
+        <div class="flex items-center justify-between">
+            <h3 class="font-heading-sm text-on-surface">Latest Log Output (#{{ latest_job.id|truncate(8, True, '') }})</h3>
+        </div>
+        <div class="bg-black/40 rounded-lg p-md border border-outline-variant/30 font-code-sm text-code-sm overflow-hidden">
+            <pre class="text-on-surface-variant whitespace-pre-wrap">
+{{ latest_job.stderr_log if latest_job.stderr_log else latest_job.stdout_log if latest_job.stdout_log else 'No logs available for this job.' }}
+            </pre>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

@@ -10,4 +10,4 @@ wheels/
 .venv
 
 # Environment Variable Files
-.env
+.env.coverage
